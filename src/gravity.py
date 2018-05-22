@@ -27,13 +27,14 @@ def run_game():
     # textpos = text.get_rect(centerx=screen.get_width()/2)
     # g =  [1000, 5000] # 加速度
     G = 9.8
-    updateTime = 0.001
+    updateTime = 0.0001
     # clock = pygame.time.Clock()
     t1 = time.time() # 
     t2 = t1
     ball0 = ball.Ball(40, [0, 0], [800, ai_settings.resolution[1]/2], [0, 0, 255])
     ball2 = ball.Ball(40, [0, 200], [800, ai_settings.resolution[1]/2], [0, 255, 0])
     ball1 = ball.Ball(100, [0, 0], [ai_settings.resolution[0]/2, ai_settings.resolution[1]/2], [0, 255, 0], 5000000)
+    balls = [ball1, ball2, ball0]
     ball0.getGravityEnergy([ball1,], G)
     ball2.getGravityEnergy([ball1,], G)
     while True:
@@ -65,9 +66,11 @@ def run_game():
         # rect.blitme()
         # visualiaze the window
         ## resize the resolution into the window
+        for eachBall in balls:
+            location = [int(eachBall.location[0]), int(eachBall.location[1])]
+            pygame.draw.circle(surface1, eachBall.color, location, eachBall.radius)
         pygame.transform.scale(surface1, ai_settings.display, screen)
-        # screen.blit(surface2, ( (screen.get_size()[0] - surface2.get_size()[0])/2,
-        #                         (screen.get_size()[1] - surface2.get_size()[1])/2)) # Blit main surface on center of display
+
         pygame.display.flip()
         # print(g[1]*(ai_settings.resolution[1] - ball0.location[1]) + g[0]*(ai_settings.resolution[0] - ball0.location[0]) + 1/2*ball0.velocity[1]**2) 
         # toc = time.time() 

@@ -4,6 +4,7 @@ import sys
 import time, math
 import ball
 from random import random
+import numpy as np
 from settings import Settings
 # from rectangle import Rectangle
 # from game_stats import game_statsts
@@ -14,35 +15,28 @@ from settings import Settings
 
 
 def impact(ball1, ball2, dt):
-    v1  = (ball1.location[0] - ball2.location[0], ball1.location[1] - ball2.location[1])
-    v2 = (ball1.velocity[0] - ball2.velocity[0], ball1.velocity[1] - ball2.velocity[1])
-    dis = math.sqrt(v1[0]**2 + v1[1]**2)
-    velocity = math.sqrt(v2[0]**2 + v2[1]**2)
-    cs = (v1[0]*v2[0] + v1[1]*v2[1])/dis/velocity
+    v1  = ball1.location - ball2.location
+    v2 = ball1.velocity - ball2.velocity
+    dis = np.linalg.norm(v1)
+    velocity = np.linalg.norm(v2)
+    cs = np.dot(v1, v2)/dis/velocity
     if cs >= 0: return 0
-    s1 = math.sqrt(1 - max(1, cs**2))*dis
+    s1 = np.sqrt(1 - max(1, cs**2))*dis
     if s1 - ball1.radius - ball2.radius > 0: return 0    
-    dt1 = (math.sqrt(dis**2 - s1**2) - math.sqrt((ball1.radius + ball2.radius)**2 - s1**2))*-cs/velocity
+    dt1 = (np.sqrt(dis**2 - s1**2) - np.sqrt((ball1.radius + ball2.radius)**2 - s1**2))*-cs/velocity
     if dt1 > dt:
         return 0
-    ball1.location[0] += ball1.velocity[0]*dt
-    ball1.location[1] += ball1.velocity[1]*dt
-    ball2.location[0] += ball2.velocity[0]*dt
-    ball2.location[1] += ball2.velocity[1]*dt
+    ball1.location += ball1.velocity*dt1
+    ball2.location += ball2.velocity*dt1
     dt2 = dt - dt1
-    v1  = (ball1.location[0] - ball2.location[0], ball1.location[1] - ball2.location[1])
-    dis = math.sqrt(v1[0]**2 + v1[1]**2)
-    # print
-    dvscale = (v1[0]*v2[0] + v1[1]*v2[1])/dis
-    dv = (-dvscale*v1[0]/dis, -dvscale*v1[1]/dis)
-    ball1.velocity[0] += dv[0]
-    ball1.velocity[1] += dv[1]
-    ball2.velocity[0] -= dv[0]
-    ball2.velocity[1] -= dv[1]
-    ball1.velocity[0] += ball1.velocity[0]*dt2
-    ball1.location[1] += ball1.velocity[1]*dt2
-    ball2.location[0] += ball2.velocity[0]*dt2
-    ball2.location[1] += ball2.velocity[1]*dt2
+    v1  = ball1.location - ball2.location
+    dis = np.linalg.norm(v1)
+    dvscale = np.dot(v1, v2)/dis
+    dv = -dvscale*v1/dis
+    ball1.velocity += dv
+    ball2.velocity -= dv
+    ball1.location += ball1.velocity*dt2
+    ball2.location += ball2.velocity*dt2
 
     return 1
 
@@ -81,9 +75,7 @@ def updateImpact(totalballs, resolution, k, LocationTable, dt):
             if x - 1 > 0 and y + 1 < k:
                 for eachBall in LocationTable[x - 1][y + 1]:
                     balls.append(eachBall)
-            if x + 1 < k and y - 1 > 0:
-                for eachBall in LocationTable[x + 1][y - 1]:
-                    balls.append(eachBall)
+
             num2 = len(balls)
             for i in range(num1):
                 ball1 = balls[i]
@@ -94,15 +86,7 @@ def updateImpact(totalballs, resolution, k, LocationTable, dt):
                         continue
                     isImpact = impact(ball1, ball2, dt)
                     ball1.isImpact, ball2.isImpact = isImpact, isImpact
-    # for i in range(len(totalballs)):
-    #     for j in range(i+1, len(totalballs)):
-    #         ball1, ball2 = totalballs[i], totalballs[j]
-    #         if math.sqrt((ball1.location[0] - ball2.location[0])**2 + (ball1.location[1] - ball2.location[1])**2) < ball1.radius + ball2.radius:
-    #             width, height = resolution[0]/k, resolution[1]/k
-    #             print(math.sqrt((ball1.location[0] - ball2.location[0])**2 + (ball1.location[1] - ball2.location[1])**2) - ball1.radius - ball2.radius,
-    #                 ball1.location, ball2.location, 
-    #                 (int(ball1.location[0]/width), int(ball1.location[1]/height)),
-    #                 (int(ball2.location[0]/width), int(ball2.location[1]/height)))
+
     # t2 = time.time()
     LocationTable = setBallLocation(totalballs, resolution, k)
     # t3 = time.time()
@@ -142,21 +126,16 @@ def run_game():
     # textpos = text.get_rect(centerx=screen.get_width()/2)
     g =  [0, 0] # 加速度
     updateTime = 0.02
-    # clock = pygame.time.Clock()
-    t1 = time.time() # 
-    t2 = t1
-    # ball0 = ball.Ball(40, [-100, 0], [600, 600], [0, 255, 0])
-    # ball1 = ball.Ball(40, [ 100, 0], [300, 640], [0, 0, 255])
-    # balls = [ball0, ball1]
     balls = generateBalls(700, -100, 100, 30, ai_settings.resolution)
-    k = 50
+    k = 32
     LocationTable = setBallLocation(balls, ai_settings.resolution, k)
     
+    t1 = time.time() # 
     while True:
         # clock.tick(30)
         # supervise keyboard and mouse item
         # print(t2,velocity)
-        # tic = time.time() 
+        tic = time.time() 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -166,17 +145,13 @@ def run_game():
         surface1.fill(ai_settings.bg_color) # fill color
 
         while t2 - t1 > updateTime:
-            # tt1 = time.time()
+            tt1 = time.time()
             LocationTable = updateImpact(balls, ai_settings.resolution, k, LocationTable, updateTime)
-            # tt2 = time.time()
-            # for eachBall in balls:
-            #     if eachBall.isImpact == 1:
-            #         print("got you")
-            # print(LocationTable)
+            tt2 = time.time()
             for eachBall in balls:
                 if eachBall.isImpact == 0:
                     eachBall.update(surface1, g, updateTime)
-            # tt3 = time.time()
+            tt3 = time.time()
             # print((tt3 - tt2)/(tt2 - tt1))
 
             # isImpact = impact(ball0, ball1, updateTime)
@@ -196,10 +171,13 @@ def run_game():
         # rect.blitme()
         # visualiaze the window
         ## resize the resolution into the window
+        for eachBall in balls:
+            location = [int(eachBall.location[0]), int(eachBall.location[1])]
+            pygame.draw.circle(surface1, eachBall.color, location, eachBall.radius)
         pygame.transform.scale(surface1, ai_settings.display, screen)
         pygame.display.flip()
-        # toc = time.time() 
-        # print((t2 - t1), toc - tic)
+        toc = time.time() 
+        print(toc - tic)
 
 
     #############

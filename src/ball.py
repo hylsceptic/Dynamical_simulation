@@ -1,10 +1,11 @@
-import pygame, math
+import math
+import numpy as np
 class Ball():
 
     def __init__(self, radius, velocity, location, color, mass=1):
         self.radius = radius
-        self.velocity = velocity
-        self.location = location
+        self.velocity = np.array(velocity)
+        self.location = np.array(location)
         self.color = color
         self.mass = mass
 
@@ -84,8 +85,6 @@ class Ball():
         self.location[0] = self.location[0] + ds
         self.velocity[0] = self.velocity[0] + g[0] * dtx
 
-        location = [round(self.location[0]), round(self.location[1])]
-        pygame.draw.circle(surface, self.color, location, self.radius)
 
 
     def getGravityEnergy(self, masses, G):
@@ -141,7 +140,4 @@ class Ball():
             else:
                 scale = svelocity/curentVelocity
                 self.velocity = [self.velocity[0]*scale, self.velocity[1]*scale]
-
-        location = [round(self.location[0]), round(self.location[1])]
-        pygame.draw.circle(surface, self.color, location, self.radius)
         # print(g, self.velocity)
