@@ -27,7 +27,7 @@ def run_game():
     # textpos = text.get_rect(centerx=screen.get_width()/2)
     # g =  [1000, 5000] # 加速度
     G = 9.8
-    updateTime = 0.0001
+    updateTime = 0.001
     # clock = pygame.time.Clock()
     t1 = time.time() # 
     t2 = t1

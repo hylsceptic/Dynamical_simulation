@@ -31,8 +31,8 @@ class Ball():
         self.angVelocity = angVelocity
         self.radian = radian
 
-    def getAngleByVector(v):
-        v=[v[0], -v[1]]
+    # def getAngleByVector(v):
+    #     v=[v[0], -v[1]]
 
 
     def  updateRadian(self, dt):
@@ -96,6 +96,7 @@ class Ball():
             ds = self.velocity[1]*dty + 1/2*g[1]*dty**2
 
             if not self.state.getBit(1):
+                ## if impact the bottom boundary
                 if self.location[1] + self.radius + ds > sizey:
                     ds1 = sizey - self.location[1] - self.radius
                     if g[1] == 0:
@@ -126,7 +127,6 @@ class Ball():
                     
                     self.location[1] = sizey - self.radius
                     dty -= dt1
-                    # print("dty", dty, "dt1", dt1, ds1)
                     ds = self.velocity[1]*dty + 1/2*g[1]*dty**2
                     if abs(self.velocity[1]) <= abs(g[1]/10):
                         self.velocity[1] = 0
@@ -134,7 +134,8 @@ class Ball():
                         self.state.setBit(1)
 
 
-                elif self.location[1] - self.radius + ds < 0:
+                ## if impact the up boundary
+                if self.location[1] - self.radius + ds < 0:
                     ds1 = - (self.location[1] - self.radius)
                     if g[1] == 0:
                         dt1 = (self.location[1] - self.radius)/self.velocity[1]
@@ -173,17 +174,21 @@ class Ball():
                 if not self.state.getBit(1):
                     self.location[1] = self.location[1] + ds
                     self.velocity[1] = self.velocity[1] + g[1] * dty
+                
+                ## if contact with the left or right boundaries
                 if self.state.getBit(0):
+                    ## if contact with the left boundary
                     if abs(self.location[0] - self.radius) < 1e-6:
                         relativeV = self.getBoundaryVelocity(math.pi)
                         cpoint = [self.location[0] - self.radius, self.location[1]]
                         signv = -sign(self.velocity[1] + self.radius*self.angVelocity)
+                    ## if contact with the right boundary
                     else:
                         relativeV = self.getBoundaryVelocity(0)
                         cpoint = [self.location[0] + self.radius, self.location[1]]
                         signv = -sign(self.velocity[1] - self.radius*self.angVelocity)
+
                     relativeSpeed = abs2D(relativeV)
-                    # print(relativeSpeed, self.velocity[0], self.angVelocity)
                     if relativeSpeed > 0:
                         maxMomentum = abs(g[0])*f*dty*self.mass
                         maxChangeTvC = maxMomentum/self.mass
@@ -200,6 +205,7 @@ class Ball():
             if not self.state.getBit(0):
                 dtx = dt
                 ds = self.velocity[0]*dtx + 1/2*g[0]*dtx**2
+                ## if impact the right boundary
                 if self.location[0] + self.radius + ds > sizex:
                     ds1 = sizex - self.location[0] - self.radius
                     if g[0] == 0:
@@ -238,7 +244,9 @@ class Ball():
                         self.location[0] = sizex - self.radius
                         self.state.setBit(0)
 
-                elif self.location[0] - self.radius + ds < 0:
+
+                ## if impact the left boundary
+                if self.location[0] - self.radius + ds < 0:
                     ds1 = - (self.location[0] - self.radius)
                     if g[0] == 0:
                         dt1 = (self.location[0] - self.radius)/self.velocity[0]
@@ -274,20 +282,24 @@ class Ball():
                         self.state.setBit(0)
                             # if self.velocity[0] == 0:
                             #     self.state = 3
+
                 if not self.state.getBit(0):
                     self.location[0] = self.location[0] + ds
                     self.velocity[0] = self.velocity[0] + g[0] * dtx
+
+                ## if contact with the bottom or up boundaries
                 if self.state.getBit(1):
+                    ## if contact with the up boundary
                     if abs(self.location[1] - self.radius) < 1e-6:
                         relativeV = self.getBoundaryVelocity(1/2*math.pi)
                         cpoint = [self.location[0], self.location[1] - self.radius]
                         signv = -sign(self.velocity[0] - self.radius*self.angVelocity)
+                    ## if contact with the bottom boundary
                     else:
                         relativeV = self.getBoundaryVelocity(3/2*math.pi)
                         cpoint = [self.location[0], self.location[1] + self.radius]
                         signv = -sign(self.velocity[0] + self.radius*self.angVelocity)
                     relativeSpeed = abs2D(relativeV)
-                    print(relativeSpeed, self.velocity[0], self.angVelocity)
                     if relativeSpeed > 0:
                         maxMomentum = abs(g[1])*f*dty*self.mass
                         maxChangeTvC = maxMomentum/self.mass

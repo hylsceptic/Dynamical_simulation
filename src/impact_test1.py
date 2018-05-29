@@ -30,11 +30,11 @@ def run_game():
     # clock = pygame.time.Clock()
     t1 = time.time() # 
 
-    # balls = generateRandomBalls(100, -300, 300, 40, ai_settings.resolution)
+    balls = generateRandomBalls(20, -200, 200, 100, ai_settings.resolution)
     # balls = [ ball.Ball(100, [-200, 0], [2400, 1000], [0, 0, 255], 20),
     #           ball.Ball(40, [ 200, 0], [ 800, 1000], [0, 255, 0], 1),]
-    balls = [ ball.Ball(120, [-300, 0], [3200, 1000], [0, 0, 255], 1),
-              ball.Ball(120, [ 300, 0], [ 800, 1000 + 180], [0, 255, 0], 1),]
+    # balls = [ ball.Ball(120, [-300, 0], [3200, 1000], [0, 0, 255], 1, angVelocity=0.9347),
+    #           ball.Ball(120, [ 300, 0], [ 800, 1000 + 180], [0, 255, 0], 1, angVelocity=0.9347),]
     k = 5
     LocationTable = createLocationTable(balls, ai_settings.resolution, k)
     

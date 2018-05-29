@@ -8,6 +8,10 @@ import ball
 def abs2D(v1):
     return math.sqrt(v1[0]**2 + v1[1]**2)
 
+
+def dotProduct(v1, v2):
+    return v1[0]*v2[0] + v1[1]*v2[1]
+
 def sign(num):
     if num >=0:
         return 1
@@ -25,9 +29,9 @@ def getAngleByVector(v):
 
 def impact2Ball(ball1, ball2, dt, g=[0, 0], e=1, f=0):
     ## initial relative distance
-    v1  = (ball1.location[0] - ball2.location[0], ball1.location[1] - ball2.location[1])
+    v1  = (ball2.location[0] - ball1.location[0], ball2.location[1] - ball1.location[1])
     ## imitial relative velocity
-    v2 = (ball1.velocity[0] - ball2.velocity[0], ball1.velocity[1] - ball2.velocity[1])
+    v2 = (ball2.velocity[0] - ball1.velocity[0], ball2.velocity[1] - ball1.velocity[1])
     ## scale of relative distance and relative velocity
     dis = math.sqrt(v1[0]**2 + v1[1]**2)
     velocity = math.sqrt(v2[0]**2 + v2[1]**2)
@@ -59,15 +63,12 @@ def impact2Ball(ball1, ball2, dt, g=[0, 0], e=1, f=0):
     ## update speed
     vscale = abs(v1[0]*v2[0] + v1[1]*v2[1])/dis
     v = (vscale*v1[0]/dis, vscale*v1[1]/dis)
-    verticalVball1 = [-(v[0]*2*(ball2.mass/(ball1.mass + ball2.mass)))*e*f, -(v[1]*2*(ball2.mass/(ball1.mass + ball2.mass)))*e*f]
-    verticalVball2 = [ (v[0]*2*(ball1.mass/(ball1.mass + ball2.mass)))*e*f,  (v[1]*2*(ball1.mass/(ball1.mass + ball2.mass)))*e*f]
+    if v[0]*v1[0] + v[1]*v1[1] > 0:
+        v = [-v[0], -v[1]]
+    verticalVball1 = [ (v[0]*(1 + e)*(ball2.mass/(ball1.mass + ball2.mass))),  (v[1]*(1 + e)*(ball2.mass/(ball1.mass + ball2.mass)))]
+    verticalVball2 = [-(v[0]*(1 + e)*(ball1.mass/(ball1.mass + ball2.mass))), -(v[1]*(1 + e)*(ball1.mass/(ball1.mass + ball2.mass)))]
     verticalSball1 = abs2D(verticalVball1)
     verticalSball2 = abs2D(verticalVball2)
-    ball1.velocity[0] = ball1.velocity[0] - (v[0]*2*(ball2.mass/(ball1.mass + ball2.mass)))*e + dt*g[0]
-    ball1.velocity[1] = ball1.velocity[1] - (v[1]*2*(ball2.mass/(ball1.mass + ball2.mass)))*e + dt*g[1]
-    ball2.velocity[0] = ball2.velocity[0] + (v[0]*2*(ball1.mass/(ball1.mass + ball2.mass)))*e + dt*g[0]
-    ball2.velocity[1] = ball2.velocity[1] + (v[1]*2*(ball1.mass/(ball1.mass + ball2.mass)))*e + dt*g[1]
-
     ## Tangential speed
     ## relative velocity of centers
     
@@ -75,12 +76,12 @@ def impact2Ball(ball1, ball2, dt, g=[0, 0], e=1, f=0):
     angle2 = getAngleByVector([-v1[0], -v1[1]])
     boundvball1 = ball1.getBoundaryVelocity(angle1)
     boundvball2 = ball2.getBoundaryVelocity(angle2)
-    relativeTv = [boundvball2[0] - boundvball1[0] - v[0], boundvball2[0] - boundvball1[0] - v[1]]
+    relativeTv = [boundvball2[0] - boundvball1[0] - v[0], boundvball2[1] - boundvball1[1] - v[1]]
     relativeTs = abs2D(relativeTv)
     vectorRelativeTv = [relativeTv[0]/relativeTs, relativeTv[1]/relativeTs]
     if relativeTs > 0 and f > 0:
-        maxChangeTs1 = verticalSball1*(1 + 1//(2/5*ball1.mass))
-        maxChangeTs2 = verticalSball2*(1 + 1//(2/5*ball2.mass))
+        maxChangeTs1 = verticalSball1*f*(1 + 1/(2/5*ball1.mass))
+        maxChangeTs2 = verticalSball2*f*(1 + 1/(2/5*ball2.mass))
         newRv = max(0, relativeTs - maxChangeTs1 - maxChangeTs2)
         realChangeTv = relativeTs - newRv
         realChangeTvB1 = realChangeTv*maxChangeTs1/(maxChangeTs1 + maxChangeTs2)
@@ -103,8 +104,15 @@ def impact2Ball(ball1, ball2, dt, g=[0, 0], e=1, f=0):
         realChangeTvB2F = realChangeTvB2*1/(2/5*ball1.mass)/((1 + 1/(2/5*ball1.mass)))
         momentum = [-vectorRelativeTv[0]*realChangeTvB1F*ball2.mass, -vectorRelativeTv[1]*realChangeTvB1F*ball2.mass]
         ball2.updateAngVelocity(ball2.getBoundaryPointByAngle(angle2), momentum)
-        print(ball2.location, angle2)
-        print(ball1.location, angle1)
+        cp = ball2.getBoundaryPointByAngle(angle2)
+        print(dotProduct([cp[0] - ball2.location[0], cp[1] - ball2.location[1]], vectorRelativeTv))
+        # print(ball2.location, angle2)
+        # print(ball1.location, angle1)
+
+    ball1.velocity[0] = ball1.velocity[0] + verticalVball1[0] + dt*g[0]
+    ball1.velocity[1] = ball1.velocity[1] + verticalVball1[1] + dt*g[1]
+    ball2.velocity[0] = ball2.velocity[0] + verticalVball2[0] + dt*g[0]
+    ball2.velocity[1] = ball2.velocity[1] + verticalVball2[1] + dt*g[1]
 
 
     # vt = [v2[0] - v[0], v2[1] - v[1]]
@@ -128,6 +136,13 @@ def impact2Ball(ball1, ball2, dt, g=[0, 0], e=1, f=0):
     ball2.location[0] += ball2.velocity[0]*dt2
     ball2.location[1] += ball2.velocity[1]*dt2
     return 1
+
+def generateSpecifiedBalls(num, velocity, radius, location, resolution, state):
+    balls = []
+    for i in range(num):
+        balls.append(ball.Ball(radius[i], velocity[i], location[i], [255*random(), 255*random(), 255*random()], state=state[i]))
+    return balls
+
 
 
 def generateRandomBalls(num, maxv, minv, radius, resolution):
